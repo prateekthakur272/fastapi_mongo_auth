@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Header, status
 from fastapi.responses import JSONResponse
 from core.databse import client
 from fastapi.exceptions import HTTPException
 from .utils import get_hashed_password, verify_password
 from .models import TokenResponse, User, UserSignUp, UserSignIn
 from .schemas import user_from_dict
-from .services import generate_tokens, JWTBearer
+from .services import generate_tokens, JWTBearer, refresh_access_token
 
 
 router = APIRouter(prefix='/auth')
@@ -51,4 +51,16 @@ async def signin(user:UserSignIn):
 
 @router.get('/me', status_code=status.HTTP_200_OK, response_class=JSONResponse, response_model=User, response_model_exclude=['password'])
 def current_user(user = Depends(JWTBearer())):
+    '''
+    Returns current user
+    '''
     return user
+
+
+@router.get('/refresh-token')
+def refres_token(refresh_token = Header()):
+    '''
+    Refresh access token using refresh token
+    '''
+    return refresh_access_token(refresh_token)
+    

@@ -1,3 +1,4 @@
+from bson import ObjectId
 from fastapi import HTTPException, Request, status
 from .models import User, TokenResponse
 from .utils import generate_access_token, generate_refresh_token, get_payload
@@ -14,6 +15,13 @@ def generate_tokens(user:User) -> TokenResponse:
     payload = {'username':user.username, 'email':user.email, 'id':user.id}
     access_token = generate_access_token(payload)
     refresh_token = generate_refresh_token(payload)
+    return TokenResponse(access_token=access_token, refresh_token=refresh_token)
+
+
+def refresh_access_token(refresh_token:str) -> TokenResponse:
+    user = get_user_by_token(refresh_token)
+    payload = {'username':user.username, 'email':user.email, 'id':user.id}
+    access_token = generate_access_token(payload)
     return TokenResponse(access_token=access_token, refresh_token=refresh_token)
 
 
