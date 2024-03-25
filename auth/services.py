@@ -31,7 +31,7 @@ def get_user_by_token(token:str) -> User :
     '''
     payload = get_payload(token)
     if payload:
-        return user_from_dict(client.campus_connect.users.find_one({'username':payload.get('username','')}))
+        return user_from_dict(client.database_name.users.find_one({'username':payload.get('username','')}))
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid or expired token.")
 
 

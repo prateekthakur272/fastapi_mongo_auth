@@ -18,14 +18,14 @@ async def signup(user:UserSignUp):
     raise HttpException if user already exists
     '''
     #check if user already exists
-    if client.campus_connect.users.find_one({'username':user.username}):
+    if client.database_name.users.find_one({'username':user.username}):
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail='account already exists with this username.')
-    if client.campus_connect.users.find_one({'email':user.email}):
+    if client.database_name.users.find_one({'email':user.email}):
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail='account already exists with this email.')
     # create user
     user_data = User(**user.model_dump()).model_dump(exclude=['id'])
     user_data['password'] = get_hashed_password(user.password)
-    client.campus_connect.users.insert_one(user_data)
+    client.database_name.users.insert_one(user_data)
     return {'message':f'account created!, please verify account by email sent to {user.email}.'}
 
 
@@ -34,7 +34,7 @@ async def signin(user:UserSignIn):
     '''
     takes username and password in a form and returns access and refresh token
     '''
-    current_user = client.campus_connect.users.find_one({'username':user.username})
+    current_user = client.database_name.users.find_one({'username':user.username})
     # check if user data exists
     if not current_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='user not found.')
