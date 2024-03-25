@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Body, status
+from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from core.databse import client
 from fastapi.exceptions import HTTPException
 from .utils import get_hashed_password, verify_password
 from .models import TokenResponse, User, UserSignUp, UserSignIn
 from .schemas import user_from_dict
-from .services import generate_tokens
+from .services import generate_tokens, JWTBearer
 
 
 router = APIRouter(prefix='/auth')
@@ -29,7 +29,7 @@ async def signup(user:UserSignUp):
     return {'message':f'account created!, please verify account by email sent to {user.email}.'}
 
 
-@router.post('/signin', response_class=JSONResponse, response_model=TokenResponse)
+@router.post('/signin', response_class=JSONResponse, response_model=TokenResponse, status_code=status.HTTP_200_OK)
 async def signin(user:UserSignIn):
     '''
     takes username and password in a form and returns access and refresh token
@@ -47,3 +47,8 @@ async def signin(user:UserSignIn):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='account not active.')
     # generate tokens and return token response
     return generate_tokens(current_user)
+
+
+@router.get('/me', status_code=status.HTTP_200_OK, response_class=JSONResponse, response_model=User, response_model_exclude=['password'])
+def current_user(user = Depends(JWTBearer())):
+    return user

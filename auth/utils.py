@@ -43,5 +43,6 @@ def get_payload(token:str) -> dict|None:
     '''
     try:
         data = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+        return data
     except jwt.PyJWTError:
         return None
