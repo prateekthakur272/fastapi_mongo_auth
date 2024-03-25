@@ -11,5 +11,5 @@ def user_to_dict(user:User):
     }
     
 
-def user_from_dict(data:dict):
-    return User(**data)
+def user_from_dict(data:dict)-> User:
+    return User(**data, id = str(data.get('_id','')))

@@ -2,13 +2,16 @@ from fastapi import APIRouter, Body, status
 from fastapi.responses import JSONResponse
 from core.databse import client
 from fastapi.exceptions import HTTPException
-from .utils import get_hashed_password
-from .models import User, UserSignUp, UserSignIn
+from .utils import get_hashed_password, verify_password
+from .models import TokenResponse, User, UserSignUp, UserSignIn
+from .schemas import user_from_dict
+from .services import generate_tokens
+
 
 router = APIRouter(prefix='/auth')
 
 
-@router.post('/signup', response_class=JSONResponse)
+@router.post('/signup', response_class=JSONResponse, status_code=status.HTTP_201_CREATED)
 async def signup(user:UserSignUp):
     '''
     Creates a new user
@@ -23,9 +26,24 @@ async def signup(user:UserSignUp):
     user_data = User(**user.model_dump()).model_dump(exclude=['id'])
     user_data['password'] = get_hashed_password(user.password)
     client.campus_connect.users.insert_one(user_data)
-    return {'message':f'account created!, please verify account by email sent to {user.email}'}
+    return {'message':f'account created!, please verify account by email sent to {user.email}.'}
 
 
-@router.post('/signin')
+@router.post('/signin', response_class=JSONResponse, response_model=TokenResponse)
 async def signin(user:UserSignIn):
-    return user
+    '''
+    takes username and password in a form and returns access and refresh token
+    '''
+    current_user = client.campus_connect.users.find_one({'username':user.username})
+    # check if user data exists
+    if not current_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='user not found.')
+    current_user = user_from_dict(current_user)
+    # verify password
+    if not verify_password(user.password, current_user.password):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='wrong password')
+    # check if user is active or not
+    if not current_user.is_active:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='account not active.')
+    # generate tokens and return token response
+    return generate_tokens(current_user)
